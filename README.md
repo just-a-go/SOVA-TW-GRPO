@@ -1,260 +1,326 @@
+<div align="center">
+
 # SOVA-TW-GRPO
 
-Source-code release for SOVA-TW-GRPO, built on the TW-GRPO codebase for video reasoning.
+**Reinforcing Video Reasoning with Focused Thinking via Three Granularities:<br/>Tokens, Answer Sets, and Response Groups**
 
-This repository intentionally contains only project code and configuration. Model checkpoints, training and evaluation logs, datasets, media, build environments, and vendored third-party utilities are not included. Install external dependencies in your own environment.
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-bf16-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Backbone](https://img.shields.io/badge/Backbone-Qwen2.5--VL--7B-6E56CF.svg)](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct)
+[![arXiv](https://img.shields.io/badge/arXiv-2505.24718-B31B1B.svg)](https://arxiv.org/abs/2505.24718)
 
-## 🔥 Innovation
+</div>
 
-✨**💫 Entropy-Guided Vision-Language Reasoning**  
-To the best of our knowledge, we are the **first pioneers to harness the power of intra-group information entropy within GRPO for elevating video reasoning capabilities in MLLMs**. By **elegantly quantifying token significance through sophisticated entropy-based divergence metrics**, our approach establishes a noval optimization framework that **dynamically spotlights semantically crucial tokens during policy refinement**. This breakthrough innovation illuminates promising pathways toward more efficient, focused, and interpretable reasoning paradigms in multimodal reinforcement learning systems.
+---
 
-## ✨ Highlights
+Source release for **SOVA-TW-GRPO**, a group-relative reinforcement learning framework for video
+reasoning that allocates credit at **three complementary granularities**: individual **tokens**,
+**answer sets**, and whole **response groups**.
 
-🌟 **🎯 Token-Level Importance Weighting**  
-We propose a mechanism prioritizing tokens with **high informational density (estimated by intra-group information entropy)** during loss computation, enabling concise, task-focused reasoning chains.
-
-🌟 **🎨 Multi-grained Reward Modeling**  
-Using multi-choice QA tasks with **partial correctness evaluation** to improve gradient estimation and policy stability.
-
-🌟 **🔄 Question-Answer Inverse**  
-A data augmentation **converting single-choice QA into multi-choice formats via question negation and answer inversion**, mitigating data scarcity.
-
-<!-- ## 🔍 Overview of Token-Level Importance Weighted Group Relative Policy Optimization (TW-GRPO)
-
-<img src="assets/figs/overview.jpg" alt="Paper PDF" width="800" height="600">
-
-📊 Overview of the TW-GRPO framework. The diagram shows the key steps in a forward pass, starting from the video input, generating possible completions, and calculating the reward with adjustments for the final objective and model updates. Specifically, **🎁 a multi-level soft reward is incorporated into the reward calculation**, providing partial correctness feedback. These signals are then integrated into the final objective, where **⚖️ token-level importance weighting** is applied, allowing the model to prioritize more informative tokens and improve overall performance. -->
-
-## 📈 Comparative Analysis with State-of-the-Art Methods
-
-To better understand the characteristics of our method, we provide case studies comparing reasoning paths between TW-GRPO and [T-GRPO(Video-R1)](https://github.com/tulerfeng/Video-R1) in [`example/performance_comparison.md`](example/performance_comparison.md).
-
-## 🛠️ Set up
+It extends **TW-GRPO** (ECCV 2026, *Reinforcing Video Reasoning with Focused Thinking*) with
+**SOVA** — *Strict Outcome-Conditioned Virtual Advantages* — which restores a directional learning
+signal in response groups whose outcomes are homogeneous, a failure mode inherited from
+group-relative normalization.
 
 > [!NOTE]
-> 💻 The training commands below are configured for a node of 2 x H800 (80GB). Training for 500 steps takes approximately 4 hours.
+> **Scope of this release.** This repository contains project code and configuration only.
+> Model checkpoints, training and evaluation logs, datasets, media, build environments and
+> vendored third-party utilities are **not** bundled. Obtain them from the sources listed below
+> and install dependencies in your own environment.
 
-To successfully implement TW-GRPO training, you need to complete the following three essential steps: **dependency installation**, **model backbone download**, and **training dataset download**.
+## Contents
 
-### 🛠️ Step 1: Environment Setup and Dependency Installation
+- [Method at a glance](#method-at-a-glance)
+- [What SOVA adds](#what-sova-adds)
+- [Paper-to-code map](#paper-to-code-map)
+- [Repository layout](#repository-layout)
+- [Setup](#setup)
+- [Training](#training)
+- [Evaluation](#evaluation)
+- [Question-Answer Inversion (QAI)](#question-answer-inversion-qai)
+- [Acknowledgements](#acknowledgements)
+- [Citation](#citation)
+
+## Method at a glance
+
+Group Relative Policy Optimization scores an entire response by the correctness of its final
+answer and normalizes that score within a sampled group. One scalar is therefore shared by every
+token of a reasoning chain, by every answer that is not exactly correct, and by every response of
+a group whose outcomes agree. SOVA-TW-GRPO refines credit assignment at each of those three
+levels.
+
+| Granularity | Mechanism | Effect | Introduced in |
+| :-- | :-- | :-- | :-- |
+| **Token** | Importance weighting from intra-group information entropy | Prioritizes tokens with high information density over generic scaffolding | TW-GRPO (ECCV 2026) |
+| **Answer set** | Multi-level soft reward over multi-answer QA, with Question-Answer Inversion for data augmentation | Distinguishes partial correctness instead of a binary 0/1 signal | TW-GRPO (ECCV 2026) |
+| **Response group** | **SOVA**: strict outcome-conditioned virtual advantages | Restores a directional signal where group-relative normalization collapses | **This work** |
+
+## What SOVA adds
+
+When every response in a sampled group is fully correct and well formatted, or when none earns
+any accuracy credit, the group-relative advantage is zero for every response. No gradient
+survives — precisely at the outcome extremes that carry the clearest correctness evidence. Token
+weighting and soft rewards cannot recover this signal, because both act on an advantage that has
+already vanished.
+
+SOVA inserts a **signed virtual anchor** into the group normalization statistics on those two
+strict outcome conditions only. The anchor contributes no response tokens; it only shifts the
+mean and standard deviation used to normalize the real responses. The corrected advantage is a
+**residual interpolation** between the frozen TW-GRPO advantage and the virtual-statistics
+advantage, controlled by a per-branch coefficient `lambda`.
+
+| Branch | Gate condition | Anchor (default) | Anchor position | Induced signal |
+| :-- | :-- | :-- | :-- | :-- |
+| **Positive** | Every response fully correct **and** well formatted | `1.5` | Below the group's common total reward (`2.0`) | Positive advantage |
+| **Negative** | No response earns accuracy credit | `2.0` | Above the group's common total reward (`f_i <= 1`) | Negative advantage |
+
+The anchors set only a **direction**, not a magnitude: the induced group-level shift is known in
+closed form and is bounded independently of the anchor value, and the correction preserves the
+reward ordering among sampled responses. Treat `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` and
+`SOVA_NEGATIVE_VIRTUAL_TOTAL_REWARD` as semantic constants, not as strength knobs — use `lambda`
+to control the strength.
+
+## Paper-to-code map
+
+| Paper | Component | Code |
+| :-- | :-- | :-- |
+| Sec. III-B | Token importance weight `w_t` from intra-group KL divergence | [`src/open_r1/trainer/grpo_trainer.py`](src/open_r1/trainer/grpo_trainer.py) → `compute_token_importance_kl_logs_uniform()`; applied to the per-token loss. Flag: `--alpha` |
+| Sec. III-C, Eq. (7) | Multi-level soft accuracy reward | [`src/open_r1/grpo.py`](src/open_r1/grpo.py) → `accuracy_reward()` (soft) vs. `origin_accuracy_reward()` (binary), `format_reward()`. Flags: `--reward_funcs`, `--question_type` |
+| Sec. III-C | Question-Answer Inversion (QAI) | [`data/question_answer_inverse/`](data/question_answer_inverse/) → `convert_nextgqa.py`, `convert_star.py` |
+| Sec. III-D, Eq. (10) | Strict outcome conditions (the two gates) | [`src/open_r1/sova.py`](src/open_r1/sova.py) → `apply_sova_advantages()` |
+| Sec. III-D, Eq. (17) | Residual interpolation between baseline and virtual-statistics advantage | [`src/open_r1/sova.py`](src/open_r1/sova.py) → `apply_sova_advantages()`, `_virtual_group_statistics()` |
+| Sec. IV | Configuration validity conditions used by the analysis | [`src/open_r1/sova.py`](src/open_r1/sova.py) → `validate_sova_configuration()` |
+| Sec. II-C, Table I | NGRPO and AVSPO baselines for degenerate advantage groups | [`src/open_r1/grpo_variants.py`](src/open_r1/grpo_variants.py) → `compute_ngrpo_advantages()`, AVSPO transforms. Flag: `--loss_type ngrpo` / `avspo` |
+
+## Repository layout
+
+```
+SOVA-TW-GRPO/
+├── configs/                      # Training / SFT / DeepSpeed configuration
+├── data/
+│   └── question_answer_inverse/  # QAI conversion scripts
+├── example/                      # Case studies and the QAI tutorial
+├── scripts/                      # Launchers for training and evaluation
+│   ├── sova-tw-grpo.sh           # Main launcher (SOVA-TW-GRPO and baselines)
+│   ├── tw-grpo.sh                # Conference-version launcher
+│   ├── eval-sova-tw-grpo.sh      # SOVA-TW-GRPO evaluation
+│   └── eval-sova-general.sh      # General video understanding evaluation
+├── src/
+│   ├── eval/                     # Benchmark evaluation code
+│   └── open_r1/
+│       ├── grpo.py               # Reward functions and entry point
+│       ├── grpo_variants.py      # NGRPO / AVSPO baselines
+│       ├── sova.py               # SOVA virtual advantages
+│       └── trainer/              # GRPO trainer and config
+└── tests/
+```
+
+## Setup
+
+> [!NOTE]
+> The training commands below are configured for one node with 2 x H800 (80 GB).
+> Training for 500 steps takes roughly 4 hours.
+
+### Step 1 — Environment
+
 ```bash
 git clone https://github.com/just-a-go/SOVA-TW-GRPO.git
 cd SOVA-TW-GRPO
-conda create -n r1 python=3.10
-conda activate r1
+conda create -n sova-tw-grpo python=3.10
+conda activate sova-tw-grpo
 pip3 install -e ".[dev]"
 pip3 install flash_attn --no-build-isolation
 pip3 install "qwen-vl-utils>=0.0.10" decord
 ```
 
-### 📥 Step 2: Download Model Backbone
-
-To download the Qwen2.5-VL-7B-Instruct model, we use the `huggingface_hub` package for quick single-line downloads:
+### Step 2 — Model backbone
 
 ```bash
 pip install -U huggingface_hub
-huggingface-cli download --resume-download Qwen/Qwen2.5-VL-7B-Instruct --local-dir Qwen/Qwen2.5-VL-7B-Instruct
+huggingface-cli download --resume-download Qwen/Qwen2.5-VL-7B-Instruct \
+  --local-dir Qwen/Qwen2.5-VL-7B-Instruct
 ```
 
-### 🎥 Step 3: Download Training Dataset
+### Step 3 — Training data (CLEVRER)
 
-#### 🧩 CLEVRER
-We use the counterfactual tasks from the CLEVRER dataset as our training data. This source release does not bundle CLEVRER annotations or videos; download them from the official source and arrange them under your local `data/CLEVRER` directory. You can use the following script for quick setup:
+Training uses the counterfactual split of CLEVRER. Annotations and videos are not bundled;
+download them from the official source into your local `data/CLEVRER` directory.
 
 ```bash
-# Create directories
 mkdir -p data/CLEVRER/{train_video,validation_video}
 
-# Download training videos
 wget -P data/CLEVRER/train_video http://data.csail.mit.edu/clevrer/videos/train/video_train.zip
 unzip data/CLEVRER/train_video/video_train.zip -d data/CLEVRER/train_video
 rm data/CLEVRER/train_video/video_train.zip
 
-# Download validation videos
 wget -P data/CLEVRER/validation_video http://data.csail.mit.edu/clevrer/videos/validation/video_validation.zip
 unzip data/CLEVRER/validation_video/video_validation.zip -d data/CLEVRER/validation_video
 rm data/CLEVRER/validation_video/video_validation.zip
 ```
 
-#### 🌐 General Video Datasets
+### Step 4 — Evaluation data (optional)
 
-The test datasets are provided with download links below. Please organize the test data according to the following guidelines. **If you only want to reproduce results on the CLEVRER dataset, you can skip this step.**
+Skip this step if you only want to reproduce the CLEVRER results.
 
-| 📊 Dataset | 💾 Size | 🔗 Link |
-|---------|------|------|
-| [NExT-QA](https://huggingface.co/datasets/lmms-lab/NExTQA) | 11GB | [📥 Download](https://huggingface.co/datasets/lmms-lab/NExTQA) |
-| [MMVU](https://huggingface.co/datasets/yale-nlp/MMVU) | 0.9GB | [📥 Download](https://huggingface.co/datasets/yale-nlp/MMVU) |
-| [MVBench](https://huggingface.co/datasets/OpenGVLab/MVBench) | 16GB | [📥 Download](https://huggingface.co/datasets/OpenGVLab/MVBench) |
-| [TempCompass](https://huggingface.co/datasets/lmms-lab/TempCompass) | 0.4GB | [📥 Download](https://huggingface.co/datasets/lmms-lab/TempCompass) |
-| [Video-MME](https://huggingface.co/datasets/lmms-lab/Video-MME) | 94GB | [📥 Download](https://huggingface.co/datasets/lmms-lab/Video-MME) |
-| [STAR](https://modelscope.cn/datasets/Video-R1/Video-R1-data/files) | 7GB | [📥 Download](https://modelscope.cn/datasets/Video-R1/Video-R1-data/files) |
+| Dataset | Size | Link |
+| :-- | --: | :-- |
+| NExT-QA | 11 GB | [huggingface.co/datasets/lmms-lab/NExTQA](https://huggingface.co/datasets/lmms-lab/NExTQA) |
+| MMVU | 0.9 GB | [huggingface.co/datasets/yale-nlp/MMVU](https://huggingface.co/datasets/yale-nlp/MMVU) |
+| MVBench | 16 GB | [huggingface.co/datasets/OpenGVLab/MVBench](https://huggingface.co/datasets/OpenGVLab/MVBench) |
+| TempCompass | 0.4 GB | [huggingface.co/datasets/lmms-lab/TempCompass](https://huggingface.co/datasets/lmms-lab/TempCompass) |
+| Video-MME | 94 GB | [huggingface.co/datasets/lmms-lab/Video-MME](https://huggingface.co/datasets/lmms-lab/Video-MME) |
+| STAR | 7 GB | [modelscope.cn/datasets/Video-R1/Video-R1-data](https://modelscope.cn/datasets/Video-R1/Video-R1-data/files) |
 
-> 📝 **Important Notes:**
-> - NExT-QA and NExT-GQA share the same video content  
-> - MVBench dataset may contain missing videos (refer to [issue #24](https://github.com/tulerfeng/Video-R1/issues/24) for solutions)  
-> - Dataset annotations are not bundled in this source release. Obtain them from the respective dataset sources and place them in your local `data/evaluation/` and `data/CLEVRER/` directories:
->   - nextgqa files are from [VideoChat-R1](https://github.com/OpenGVLab/VideoChat-R1)  
->   - mmvu/mvbench/tempcompass/videomme test files are from [Video-R1](https://github.com/tulerfeng/Video-R1)  
->   - Other JSON files are sourced from their respective dataset websites
-> 
-> 📁 Please organize the video data in the following directory structure:
-> ```
-> MMVU/
-> ├── videos/
-> ├──├──Art/
-> ├──├──├──0.mp4...
->
-> MVBench/
-> ├── clevrer/
-> ├──├──video_validation/
-> ├──├──├──video.mp4...
->
-> NExTQA/
-> ├── videos/
-> ├──├──video.mp4...
->
-> STAR/
-> ├── video1.mp4
-> ├── ...
->
-> TempCompass/
-> ├── video1.mp4
-> ├── ...
->
-> videoMME/
-> ├── data/
-> ├──├──video1.mp4
-> ├──├──...
-> ```
+<details>
+<summary><b>Annotation sources and expected directory structure</b></summary>
 
-### 🏃‍♂️ Training
+- NExT-QA and NExT-GQA share the same video content.
+- MVBench may contain missing videos — see [Video-R1 issue #24](https://github.com/tulerfeng/Video-R1/issues/24).
+- Annotations are not bundled. Place them under `data/evaluation/` and `data/CLEVRER/`:
+  - NExT-GQA files come from [VideoChat-R1](https://github.com/OpenGVLab/VideoChat-R1)
+  - MMVU / MVBench / TempCompass / Video-MME test files come from [Video-R1](https://github.com/tulerfeng/Video-R1)
+  - Remaining JSON files come from their respective dataset websites
 
-Once you have prepared the environment, base model, and datasets, you can directly run the following script to train your own TW-GRPO model:
-
-```bash
-bash scripts/tw-grpo.sh
+```
+MMVU/videos/Art/0.mp4 ...
+MVBench/clevrer/video_validation/video.mp4 ...
+NExTQA/videos/video.mp4 ...
+STAR/video1.mp4 ...
+TempCompass/video1.mp4 ...
+videoMME/data/video1.mp4 ...
 ```
 
-### ⚙️ Training Configuration Options
+</details>
 
-Of course, we also provide convenient parameter settings to help you verify the effects of different designs proposed in the paper:
+## Training
 
-- **❓ Question Type** (`--question_type`):
-  - `mixed`: Multi-choice QA tasks (default)
-  - `single`: Single-choice QA tasks
+> [!IMPORTANT]
+> `scripts/sova-tw-grpo.sh` begins with a **paths block** (`PROJECT_ROOT`, `PROJECT_ENV`,
+> `CUDA_TOOLKIT`, `MODEL_NAME_OR_PATH`, `TRAIN_DATA_JSON`) holding absolute paths from the
+> development machine. Edit these to match your environment before the first run.
 
-- **🔧 Loss Type** (`--losstype`):
-  - `grpo`: Standard Group Relative Policy Optimization
-  - `tw-grpo`: Token-Level Importance Weighted GRPO (our proposed method)
+```bash
+CUDA_VISIBLE_DEVICES=0,1 bash scripts/sova-tw-grpo.sh
+```
 
-- **🎚️ Alpha Value** (`--alpha`):
-  - Default: 1.70
-  - Controls the weight scale of token-level importance
-  - Higher values emphasize more important tokens
+The launcher takes no positional arguments — configure a run by editing the selector block at the
+top of the script.
 
-- **📊 Dataset Selection** (`--jsonl_path`):
-  - Path to your dataset JSONL file
-  - Example: `evaluation/nextgqa_val_mixed.json`
+### Method selector
 
-- **🎁 Reward Function** (`--reward_funcs`):
-  - `accuracy`: Multi-level reward (partial correctness)
-  - `ori_accuracy`: Binary reward (correct/incorrect only)
+| `LOSS_TYPE` | Method | Reward functions | SOVA |
+| :-- | :-- | :-- | :-- |
+| `tw_grpo` | TW-GRPO, optionally with SOVA | `accuracy` (soft) + `format` | Available |
+| `grpo` | Standard GRPO | `origin_accuracy` (binary) | Off |
+| `ngrpo` | NGRPO baseline | `origin_accuracy` (binary) | Off |
+| `avspo` | AVSPO baseline | `origin_accuracy` (binary) | Off |
 
-### 📊 Training Curves Analysis
+SOVA requires `LOSS_TYPE="tw_grpo"`; the trainer rejects any other combination.
 
-The training-curve images and raw logs are intentionally excluded from this source release.
+### SOVA settings
 
-### 1. ⚡ Higher Training Efficiency
-- **📉 Lower reward_std**: TW-GRPO achieves faster reduction in reward standard deviation, indicating:
-  - More consistent performance across questions
-  - Reduced sensitivity to question difficulty
-  - Better generalization through training
-- **📈 Higher reward_mean**: Maintains superior average rewards despite lower variance
+| Variable | Values | Meaning |
+| :-- | :-- | :-- |
+| `SOVA_MODE` | `positive` / `negative` / `bidirectional` | Which gate(s) are active |
+| `SOVA_LAMBDA_POSITIVE` | `[0, 1]` | Interpolation weight of the positive branch |
+| `SOVA_LAMBDA_NEGATIVE` | `[0, 1]` | Interpolation weight of the negative branch |
+| `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` | `1.5` (default) | Positive anchor — a semantic constant, keep fixed |
+| `SOVA_NEGATIVE_VIRTUAL_TOTAL_REWARD` | `2.0` (default) | Negative anchor — a semantic constant, keep fixed |
 
-### 2. 🧠 Improved Reasoning Efficiency
-- **💡 Effectively reasoning**: While initial lengths are comparable, TW-GRPO shows:
-  - Significant reduction in output length as training progresses
-  - Preservation of high reward_mean despite shorter outputs
+A `lambda` must be strictly positive exactly when its branch is enabled; `validate_sova_configuration()`
+fails closed on any other combination.
 
-Per-step accuracy and format-reward logs are intentionally not included.
+### Other training options
 
-## 📊 Evaluation
+| Flag | Values | Meaning |
+| :-- | :-- | :-- |
+| `--question_type` | `mixed` (default) / `single` | Multi-answer or single-choice QA |
+| `--alpha` | `1.70` (default) | Upper bound of the token importance weight |
+| `--reward_funcs` | `accuracy` / `origin_accuracy` / `format` | Soft or binary accuracy, plus format reward |
+| `--jsonl_path` | path | Training or evaluation JSON |
+| `--num_generations` | `8` (default) | Group size `G` |
+
+To reproduce the conference configuration instead, run `bash scripts/tw-grpo.sh`.
+
+## Evaluation
 
 > [!NOTE]
-> 📝 **Evaluation Information:** This repository contains evaluation code only. Download models, datasets, and any comparison results independently.
-
-After downloading the datasets and completing training, or downloading our model parameters (available at [here](https://huggingface.co/Falconss1/TW-GRPO)), you can evaluate TW-GRPO using the following script:
+> This repository provides evaluation code only. Trained checkpoints, datasets and baseline
+> results must be obtained independently.
 
 ```bash
-bash scripts/evaluate.sh
+bash scripts/eval-sova-tw-grpo.sh    # SOVA-TW-GRPO on video reasoning benchmarks
+bash scripts/eval-sova-general.sh    # General video understanding benchmarks
+bash scripts/evaluate.sh             # Conference-version evaluation entry point
 ```
-To evaluate baselines, you need to download the model first:
+
+TW-GRPO checkpoints are available at [Falconss1/TW-GRPO](https://huggingface.co/Falconss1/TW-GRPO).
+
+<details>
+<summary><b>Baseline evaluation</b></summary>
+
 ```bash
-# For Video-R1 model
 huggingface-cli download --resume-download Video-R1/Video-R1-7B --local-dir Video-R1/Video-R1-7B
-
-# For Qwen2.5-VL-7B-COT-SFT model
 huggingface-cli download --resume-download Video-R1/Qwen2.5-VL-7B-COT-SFT --local-dir Video-R1/Qwen2.5-VL-7B-COT-SFT
-
-# For VideoChat-R1 model
 huggingface-cli download --resume-download OpenGVLab/VideoChat-R1_7B --local-dir OpenGVLab/VideoChat-R1_7B
 ```
 
-After downloading the datasets, you can evaluate different models using the following scripts:
-
 ```bash
-# 🎬 Evaluate Video-R1
-bash scripts/evaluate_videor1.sh
-
-# 🤖 Evaluate Qwen2.5-VL-7B-COT-SFT
-bash scripts/evaluate_qwen2_5vl_sft.sh
-
-# 💬 Evaluate VideoChat-R1
-bash scripts/evaluate_videochat_r1.sh
-
-# 🔍 Evaluate Qwen2.5-VL (zero-shot)
-bash scripts/evaluate_qwen2_5vl.sh
+bash scripts/evaluate_video_r1.sh        # Video-R1
+bash scripts/evaluate_qwen2_5vl_sft.sh   # Qwen2.5-VL-7B-COT-SFT
+bash scripts/evaluate_videochat_r1.sh    # VideoChat-R1
+bash scripts/evaluate_qwen2_5vl.sh       # Qwen2.5-VL, zero-shot
 ```
 
-To evaluate other baseline models, you only need to modify the `MODEL_NAME` in the evaluation script.
+For other baselines, change `MODEL_NAME` inside the evaluation script.
 
-## 🔄 Question-Answer Inverse (QAI)
+NGRPO and AVSPO are run through the training launcher with `LOSS_TYPE="ngrpo"` or `"avspo"`.
 
-QAI is a data augmentation technique that converts single-choice QA into multi-choice QA through question-answer inverse, and we provide a example in [`example/tutorial/qai_tutorial.md`](example/tutorial/qai_tutorial.md) to illustrate this method.
+</details>
 
-### 🛠️ Implementation
-Scripts for QAI conversion are available in:
+## Question-Answer Inversion (QAI)
+
+QAI converts single-choice QA into multi-answer QA by negating the question and inverting the
+answer set, which supplies the multi-level reward with training data. A worked example is given in
+[`example/tutorial/qai_tutorial.md`](example/tutorial/qai_tutorial.md).
+
 ```bash
-python data/question_answer_inverse/convert_nextgqa.py  # For NExT-GQA inversion
-python data/question_answer_inverse/convert_star.py     # For STAR inversion
+python data/question_answer_inverse/convert_nextgqa.py   # NExT-GQA
+python data/question_answer_inverse/convert_star.py      # STAR
 ```
 
-  📁 Output files will be generated in your local `data/evaluation/` directory:
-- NExT-GQA: `nextgqa_val_mixed.json`
-- STAR: `STAR_mixed.json`
+Outputs are written to your local `data/evaluation/` directory as `nextgqa_val_mixed.json` and
+`STAR_mixed.json`.
 
-## 🙏 References & Acknowledgements
-We sincerely thank the contributions from the open source community, including the awesome works of [Open-R1-Video](https://github.com/Wang-Xiaodong1899/Open-R1-Video), [Video-R1](https://github.com/tulerfeng/Video-R1) and [VideoChat-R1](https://github.com/OpenGVLab/VideoChat-R1) etc.
+Case studies comparing reasoning paths against [Video-R1](https://github.com/tulerfeng/Video-R1)
+are collected in [`example/performance_comparison.md`](example/performance_comparison.md).
 
-If you find this project useful in your research, please consider cite:
-```BibTeX
-@article{dang2025reinforcing,
-  title={Reinforcing Video Reasoning with Focused Thinking},
-  author={Dang, Jisheng and Wu, Jingze and Wang, Teng and Lin, Xuanhui and Zhu, Nannan and Chen, Hongbo and Zheng, Wei-Shi and Wang, Meng and Chua, Tat-Seng},
-  journal={arXiv preprint arXiv:2505.24718},
-  year={2025}
+## Acknowledgements
+
+This work builds on the open-source community, in particular
+[Open-R1-Video](https://github.com/Wang-Xiaodong1899/Open-R1-Video),
+[Video-R1](https://github.com/tulerfeng/Video-R1) and
+[VideoChat-R1](https://github.com/OpenGVLab/VideoChat-R1).
+
+## Citation
+
+If you find this project useful, please consider citing the conference version:
+
+```bibtex
+@inproceedings{dang2026reinforcing,
+  title     = {Reinforcing Video Reasoning with Focused Thinking},
+  author    = {Dang, Jisheng and Wu, Jingze and Wang, Teng and Lin, Xuanhui and
+               Zhu, Nannan and Chen, Hongbo and Zheng, Wei-Shi and Wang, Meng and
+               Chua, Tat-Seng},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year      = {2026}
 }
 ```
 
----
+The journal extension introducing SOVA is under review; this section will be updated once a
+citable reference is available.
 
-<div align="center">
+## License
 
-**🌟 Star this repo if you find it helpful! 🌟**
-
-</div>
-
-### 🌟 Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=longmalongma/TW-GRPO&type=Date)](https://www.star-history.com/#longmalongma/TW-GRPO&Date)
+Released under the [Apache License 2.0](LICENSE).
