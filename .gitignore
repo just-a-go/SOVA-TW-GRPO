@@ -15,7 +15,7 @@ __pycache__/
 build/
 dist/
 
-# --- LaTeX 编译产物（保留 .bbl 与 .pdf 以便投稿）---
+# --- LaTeX build artifacts (.bbl and .pdf are kept) ---
 *.aux
 *.blg
 *.out
@@ -32,7 +32,7 @@ texput.log
 TPAMI/*.log
 compile-output.txt
 
-# --- 临时 / 工具残留 ---
+# --- Temporary and tool leftovers ---
 tmp/
 _to_delete/
 .codex_tmp_ssh_askpass.*

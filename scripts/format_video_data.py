@@ -167,6 +167,17 @@ def process_single_item(example):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Format LLaVA-Video-style data into the open-r1 JSONL layout."
+    )
+    parser.add_argument("--video-root", required=True,
+                        help="Directory holding the source videos.")
+    parser.add_argument("--jsonl-file", required=True,
+                        help="Input JSONL, one sample per line.")
+    parser.add_argument("--output-file", required=True,
+                        help="JSONL path to write the formatted samples to.")
+    args = parser.parse_args()
+
     # dataset_path = "path/to/your/dataset"
     # full_dataset = load_from_disk(dataset_path)
 
@@ -181,8 +192,8 @@ def main():
     # processed_dataset.save_to_disk(output_path)
     # print(f"Processed dataset saved to: {output_path}")
     
-    video_root = "/data/wangxd/LLaVA-Video-large-swift/"
-    jsonl_file = "/data/wangxd/LLaVA-Video-large-swift/train.jsonl"
+    video_root = args.video_root
+    jsonl_file = args.jsonl_file
 
     jsonl_data = []
 
@@ -193,7 +204,7 @@ def main():
     
     count = 0
     
-    answers_file = os.path.join("/home/user/wangxd/open-r1-multimodal/data", f"LLaVA-Video-large-swift-origin.jsonl")
+    answers_file = args.output_file
     ans_file = open(answers_file, "w")
     
     for item in tqdm(jsonl_data):

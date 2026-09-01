@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Runtime and paths
-PROJECT_ROOT="/data0/codefile/wangweiqi/SOVA-TW-GRPO"
-PROJECT_ENV="/data0/codefile/wangweiqi/EF-TW-GRPO/.conda/envs/ef-tw-grpo"
-CUDA_TOOLKIT="/data0/codefile/wangweiqi/EF-TW-GRPO/.cuda-12.4"
-VAL_DATA_JSON="/data0/data/CD-TW-GRPO/CLEVRER/clevrer_counterfactual_val_cd_tw.json"
+PROJECT_ROOT="/path/to/SOVA-TW-GRPO"
+PROJECT_ENV="/path/to/conda/envs/sova-tw-grpo"
+CUDA_TOOLKIT="/path/to/cuda-12.4"
+VAL_DATA_JSON="/path/to/datasets/CLEVRER/clevrer_counterfactual_val.json"
 
 # Checkpoint and outputs
 MODEL_RUN="Qwen2.5-VL-7B-Instruct_clevrer_counterfactual_sovatwgrpo_a1p70_l0p125_vr2p0"

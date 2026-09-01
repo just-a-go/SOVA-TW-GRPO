@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ROOT="/data0/codefile/wangweiqi/SOVA-TW-GRPO"
-PROJECT_ENV="/data0/codefile/wangweiqi/EF-TW-GRPO/.conda/envs/ef-tw-grpo"
-CUDA_TOOLKIT="/data0/codefile/wangweiqi/EF-TW-GRPO/.cuda-12.4"
-SOURCE_EVAL_ROOT="/data0/codefile/wangweiqi/SCRA-TW-GRPO/data/evaluation"
+PROJECT_ROOT="/path/to/SOVA-TW-GRPO"
+PROJECT_ENV="/path/to/conda/envs/sova-tw-grpo"
+CUDA_TOOLKIT="/path/to/cuda-12.4"
+SOURCE_EVAL_ROOT="/path/to/annotations/evaluation"
 TARGET_EVAL_ROOT="${PROJECT_ROOT}/data/evaluation"
-VIDEO_ROOT="/data0/data/CD-TW-GRPO"
-MVBench_FALLBACK_ROOT="/data0/data/VideoMind-data/mvbench"
+VIDEO_ROOT="/path/to/datasets"
+MVBench_FALLBACK_ROOT="/path/to/datasets/mvbench-source"
 MVBENCH_TVQA_FRAME_ROOT="${MVBench_FALLBACK_ROOT}/video/tvqa/frames_fps3_hq"
 MVBENCH_TVQA_VIDEO_ROOT="${VIDEO_ROOT}/MVBench/tvqa/frames_fps3"
 

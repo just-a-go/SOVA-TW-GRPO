@@ -7,11 +7,11 @@ if (( $# != 0 )); then
 fi
 
 # Runtime and paths
-PROJECT_ROOT="/data0/codefile/wangweiqi/SOVA-TW-GRPO"
-PROJECT_ENV="/data0/codefile/wangweiqi/SOVA-TW-GRPO/.conda/envs/sova-tw-grpo"
-CUDA_TOOLKIT="/data0/codefile/wangweiqi/SOVA-TW-GRPO/.cuda-12.4"
-MODEL_NAME_OR_PATH="/data0/pretrained/wangweiqi/Qwen2.5-VL-7B-Instruct"
-TRAIN_DATA_JSON="/data0/data/CD-TW-GRPO/CLEVRER/clevrer_counterfactual_train_cd_tw.json"
+PROJECT_ROOT="/path/to/SOVA-TW-GRPO"
+PROJECT_ENV="/path/to/conda/envs/sova-tw-grpo"
+CUDA_TOOLKIT="/path/to/cuda-12.4"
+MODEL_NAME_OR_PATH="/path/to/Qwen2.5-VL-7B-Instruct"
+TRAIN_DATA_JSON="/path/to/datasets/CLEVRER/clevrer_counterfactual_train.json"
 
 # ===== Method selector =====
 # LOSS_TYPE: tw_grpo | grpo | ngrpo | avspo

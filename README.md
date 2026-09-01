@@ -100,18 +100,14 @@ SOVA-TW-GRPO/
 ├── configs/
 ├── data/
 │   └── question_answer_inverse/
+├── docs/
+│   └── figs/
 ├── example/
+│   └── tutorial/
 ├── scripts/
-│   ├── sova-tw-grpo.sh
-│   ├── tw-grpo.sh
-│   ├── eval-sova-tw-grpo.sh
-│   └── eval-sova-general.sh
 ├── src/
 │   ├── eval/
 │   └── open_r1/
-│       ├── grpo.py
-│       ├── grpo_variants.py
-│       ├── sova.py
 │       └── trainer/
 └── tests/
 ```
@@ -179,7 +175,7 @@ CUDA_VISIBLE_DEVICES=0,1 bash scripts/sova-tw-grpo.sh
 ```
 
 The launcher takes no arguments; configure a run in the paths and selector blocks at the top of
-the script. The paths there are from the development machine, so edit them first.
+the script. The paths there are placeholders, so set them first.
 
 ### Method selector
 

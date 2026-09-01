@@ -1,44 +1,52 @@
 #!/usr/bin/env bash
-# 清理 SOVA-TW-GRPO 输出目录中与「续训」相关的文件，保留全部 checkpoint 权重与评测结果。
+# Remove resume-related files from a training output directory, keeping every
+# checkpoint weight and evaluation result.
 #
-# 用法:
-#   bash clean_resume_artifacts.sh          # 预演，只打印不删除
-#   DRYRUN=0 bash clean_resume_artifacts.sh # 真正删除
+# Usage:
+#   bash clean_resume_artifacts.sh <output-dir>            # dry run, prints only
+#   DRYRUN=0 bash clean_resume_artifacts.sh <output-dir>   # actually delete
 
 set -uo pipefail
 shopt -s nullglob
 
-ROOT="/data0/codefile/wangweiqi/SOVA-TW-GRPO/outputs/Qwen2.5-VL-7B-Instruct_clevrer_counterfactual_sovatwgrpo_bidirectional_a1p70_lp0p125_ln0p03125_vp1p5_vn2p0"
+ROOT="${1:-}"
 DRYRUN="${DRYRUN:-1}"
 
-[ -d "$ROOT" ] || { echo "目录不存在: $ROOT"; exit 1; }
+if [ -z "$ROOT" ]; then
+    echo "Usage: bash $(basename "$0") <output-dir>" >&2
+    echo "  e.g. bash $(basename "$0") outputs/Qwen2.5-VL-7B-Instruct_clevrer_counterfactual_sovatwgrpo" >&2
+    exit 2
+fi
+
+[ -d "$ROOT" ] || { echo "No such directory: $ROOT" >&2; exit 1; }
 cd "$ROOT" || exit 1
 
-echo "工作目录 : $(pwd)"
-echo "当前占用 : $(du -sh . 2>/dev/null | cut -f1)"
-echo "模式     : $([ "$DRYRUN" = "0" ] && echo '实际删除' || echo '预演 (DRYRUN=1)')"
+echo "Directory : $(pwd)"
+echo "Current   : $(du -sh . 2>/dev/null | cut -f1)"
+echo "Mode      : $([ "$DRYRUN" = "0" ] && echo 'delete' || echo 'dry run (DRYRUN=1)')"
 echo
 
-# ---------------------------------------------------------------- 1. 安全检查
-# ZeRO-3 若未开启 stage3_gather_16bit_weights_on_model_save，权重可能只存在于
-# global_step*/ 分片中。那种 checkpoint 删掉 global_step* 等于删掉模型。
-echo "=== 检查各 checkpoint 是否已有合并权重 ==="
+# ---------------------------------------------------------------- 1. safety check
+# Without stage3_gather_16bit_weights_on_model_save, ZeRO-3 may keep the weights
+# only inside global_step*/ shards. Deleting global_step* from such a checkpoint
+# would delete the model itself.
+echo "=== Checking which checkpoints already hold consolidated weights ==="
 SAFE_DIRS=()
 UNSAFE=0
 for d in checkpoint-*/; do
     n=$(ls "$d"model-*.safetensors "$d"pytorch_model*.bin 2>/dev/null | wc -l)
     if [ "$n" -eq 0 ]; then
-        echo "  [跳过] $d  没有合并权重，保留其 global_step*"
+        echo "  [skip]  $d  no consolidated weights, keeping its global_step*"
         UNSAFE=1
     else
-        echo "  [可清] $d  合并权重 $n 片"
+        echo "  [clean] $d  $n consolidated shard(s)"
         SAFE_DIRS+=("$d")
     fi
 done
-[ ${#SAFE_DIRS[@]} -eq 0 ] && { echo; echo "没有可清理的 checkpoint，退出。"; exit 0; }
+[ ${#SAFE_DIRS[@]} -eq 0 ] && { echo; echo "Nothing to clean, exiting."; exit 0; }
 echo
 
-# ---------------------------------------------------------------- 2. 收集目标
+# ---------------------------------------------------------------- 2. collect targets
 TARGETS=()
 collect() {
     local d="$1"
@@ -52,37 +60,37 @@ collect() {
             -name 'mp_rank_*model_states.pt' \) -print0 2>/dev/null)
 }
 for d in "${SAFE_DIRS[@]}"; do collect "$d"; done
-collect "."   # 输出根目录本身也可能有
+collect "."   # the output root itself may hold some too
 
 if [ ${#TARGETS[@]} -eq 0 ]; then
-    echo "没有找到续训相关文件，可能已经清理过了。"
+    echo "No resume-related files found; this directory may already be clean."
     exit 0
 fi
 
-# ---------------------------------------------------------------- 3. 列出清单
-echo "=== 将被删除的内容 ==="
+# ---------------------------------------------------------------- 3. list
+echo "=== Would be deleted ==="
 for t in "${TARGETS[@]}"; do
     printf '  %-10s %s\n' "$(du -sh "$t" 2>/dev/null | cut -f1)" "$t"
 done
 echo
-echo "合计可释放: $(du -shc "${TARGETS[@]}" 2>/dev/null | tail -1 | cut -f1)"
+echo "Total reclaimable: $(du -shc "${TARGETS[@]}" 2>/dev/null | tail -1 | cut -f1)"
 echo
 
-# ---------------------------------------------------------------- 4. 执行
+# ---------------------------------------------------------------- 4. execute
 if [ "$DRYRUN" != "0" ]; then
-    echo "预演结束，未删除任何文件。确认无误后执行:"
-    echo "    DRYRUN=0 bash $(basename "$0")"
+    echo "Dry run finished, nothing deleted. To delete for real:"
+    echo "    DRYRUN=0 bash $(basename "$0") $ROOT"
     exit 0
 fi
 
-read -r -p "确认删除以上内容？输入 yes 继续: " ans
-[ "$ans" = "yes" ] || { echo "已取消。"; exit 1; }
+read -r -p "Delete everything listed above? Type yes to continue: " ans
+[ "$ans" = "yes" ] || { echo "Cancelled."; exit 1; }
 
 for t in "${TARGETS[@]}"; do rm -rf -- "$t"; done
 
 echo
-echo "=== 完成 ==="
-echo "清理后占用: $(du -sh . 2>/dev/null | cut -f1)"
-[ "$UNSAFE" = "1" ] && echo "注意: 有 checkpoint 因缺少合并权重被跳过，见上方 [跳过] 行。"
+echo "=== Done ==="
+echo "Size after cleanup: $(du -sh . 2>/dev/null | cut -f1)"
+[ "$UNSAFE" = "1" ] && echo "Note: some checkpoints were skipped for lacking consolidated weights, see the [skip] lines above."
 echo
 for d in checkpoint-*/; do echo "--- $d"; ls "$d"; done
