@@ -172,27 +172,6 @@ Skip this step if you only want to reproduce the CLEVRER results.
 | Video-MME | 94 GB | [huggingface.co/datasets/lmms-lab/Video-MME](https://huggingface.co/datasets/lmms-lab/Video-MME) |
 | STAR | 7 GB | [modelscope.cn/datasets/Video-R1/Video-R1-data](https://modelscope.cn/datasets/Video-R1/Video-R1-data/files) |
 
-<details>
-<summary><b>Annotation sources and expected directory structure</b></summary>
-
-- NExT-QA and NExT-GQA share the same video content.
-- MVBench may contain missing videos; see [Video-R1 issue #24](https://github.com/tulerfeng/Video-R1/issues/24).
-- Annotations are not bundled. Place them under `data/evaluation/` and `data/CLEVRER/`:
-  - NExT-GQA files come from [VideoChat-R1](https://github.com/OpenGVLab/VideoChat-R1)
-  - MMVU / MVBench / TempCompass / Video-MME test files come from [Video-R1](https://github.com/tulerfeng/Video-R1)
-  - Remaining JSON files come from their respective dataset websites
-
-```
-MMVU/videos/Art/0.mp4 ...
-MVBench/clevrer/video_validation/video.mp4 ...
-NExTQA/videos/video.mp4 ...
-STAR/video1.mp4 ...
-TempCompass/video1.mp4 ...
-videoMME/data/video1.mp4 ...
-```
-
-</details>
-
 ## Training
 
 ```bash
