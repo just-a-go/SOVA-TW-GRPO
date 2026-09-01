@@ -115,8 +115,8 @@ SOVA-TW-GRPO/
 ## Setup
 
 > [!NOTE]
-> The training commands below are configured for one node with 2 x H800 (80 GB).
-> Training for 500 steps takes roughly 4 hours.
+> The training commands below are configured for one node with 2 x A100 (80 GB).
+> Training for 500 steps takes roughly 5 hours.
 
 ### Step 1: Environment
 
