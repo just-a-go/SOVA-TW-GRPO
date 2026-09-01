@@ -23,12 +23,6 @@ It extends **TW-GRPO** (ECCV 2026, *Reinforcing Video Reasoning with Focused Thi
 signal in response groups whose outcomes are homogeneous, a failure mode inherited from
 group-relative normalization.
 
-> [!NOTE]
-> **Scope of this release.** This repository contains project code and configuration only.
-> Model checkpoints, training and evaluation logs, datasets, media, build environments and
-> vendored third-party utilities are **not** bundled. Obtain them from the sources listed below
-> and install dependencies in your own environment.
-
 ## Contents
 
 - [Method at a glance](#method-at-a-glance)
@@ -44,11 +38,21 @@ group-relative normalization.
 
 ## Method at a glance
 
-Group Relative Policy Optimization scores an entire response by the correctness of its final
-answer and normalizes that score within a sampled group. One scalar is therefore shared by every
-token of a reasoning chain, by every answer that is not exactly correct, and by every response of
-a group whose outcomes agree. SOVA-TW-GRPO refines credit assignment at each of those three
-levels.
+<p align="center">
+  <img src="docs/figs/motivation.png" alt="Motivation for SOVA-TW-GRPO" width="100%">
+</p>
+
+<p align="center">
+  <sub><b>Motivation for SOVA-TW-GRPO.</b> GRPO weights every token alike, scores answers 0/1, and
+  leaves no learning signal once a sampled group agrees. SOVA-TW-GRPO reweights tokens by
+  information density, rewards partial correctness, and injects a virtual anchor into
+  outcome-homogeneous groups.</sub>
+</p>
+
+Group Relative Policy Optimization scores a whole response by the correctness of its final answer
+and normalizes that score within a sampled group. One scalar is therefore shared by every token of
+a reasoning chain, by every answer that is not exactly correct, and by every response of a group
+whose outcomes agree. SOVA-TW-GRPO refines credit assignment at each of those three levels.
 
 | Granularity | Mechanism | Effect | Introduced in |
 | :-- | :-- | :-- | :-- |
@@ -58,28 +62,38 @@ levels.
 
 ## What SOVA adds
 
-When every response in a sampled group is fully correct and well formatted, or when none earns
-any accuracy credit, the group-relative advantage is zero for every response. No gradient
-survives — precisely at the outcome extremes that carry the clearest correctness evidence. Token
-weighting and soft rewards cannot recover this signal, because both act on an advantage that has
-already vanished.
+When every response in a sampled group is fully correct and well formatted, or when none earns any
+accuracy credit, the group-relative advantage is zero for every response and no gradient survives
+— precisely at the outcome extremes that carry the clearest correctness evidence. Token weighting
+and soft rewards cannot recover it, because both act on an advantage that has already vanished.
 
-SOVA inserts a **signed virtual anchor** into the group normalization statistics on those two
-strict outcome conditions only. The anchor contributes no response tokens; it only shifts the
-mean and standard deviation used to normalize the real responses. The corrected advantage is a
-**residual interpolation** between the frozen TW-GRPO advantage and the virtual-statistics
-advantage, controlled by a per-branch coefficient `lambda`.
+SOVA inserts a **signed virtual anchor** into the group-normalization statistics on those two
+strict conditions only. The anchor contributes no response tokens; it shifts only the mean and
+standard deviation used to normalize the real responses. The corrected advantage is a **residual
+interpolation** between the frozen TW-GRPO advantage and the virtual-statistics advantage,
+controlled by a per-branch coefficient `lambda`.
 
-| Branch | Gate condition | Anchor (default) | Anchor position | Induced signal |
-| :-- | :-- | :-- | :-- | :-- |
-| **Positive** | Every response fully correct **and** well formatted | `1.5` | Below the group's common total reward (`2.0`) | Positive advantage |
-| **Negative** | No response earns accuracy credit | `2.0` | Above the group's common total reward (`f_i <= 1`) | Negative advantage |
+| Branch | Gate condition | Anchor, relative to the group's common reward | Induced signal |
+| :-- | :-- | :-- | :-- |
+| **Positive** | Every response fully correct **and** well formatted | `1.5`, below the common reward of `2.0` | Positive advantage |
+| **Negative** | No response earns accuracy credit | `2.0`, above the common reward (`f_i <= 1`) | Negative advantage |
+
+<p align="center">
+  <img src="docs/figs/sova_qualitative.png" alt="SOVA advantage recalibration on an all-zero-accuracy group" width="100%">
+</p>
+
+<p align="center">
+  <sub><b>Advantage recalibration, negative branch.</b> Eight CLEVRER rollouts all fail and share one
+  total reward, so TW-GRPO normalizes to zero advantages. The negative gate admits the anchor
+  <code>v_- = 2.0</code> into the statistics alone, and the interpolated residual pushes every real
+  advantage below zero.</sub>
+</p>
 
 The anchors set only a **direction**, not a magnitude: the induced group-level shift is known in
-closed form and is bounded independently of the anchor value, and the correction preserves the
-reward ordering among sampled responses. Treat `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` and
-`SOVA_NEGATIVE_VIRTUAL_TOTAL_REWARD` as semantic constants, not as strength knobs — use `lambda`
-to control the strength.
+closed form, is bounded independently of the anchor value, and preserves the reward ordering among
+sampled responses. Treat `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` and
+`SOVA_NEGATIVE_VIRTUAL_TOTAL_REWARD` as semantic constants rather than strength knobs — use
+`lambda` to control the strength.
 
 ## Paper-to-code map
 
@@ -195,17 +209,14 @@ videoMME/data/video1.mp4 ...
 
 ## Training
 
-> [!IMPORTANT]
-> `scripts/sova-tw-grpo.sh` begins with a **paths block** (`PROJECT_ROOT`, `PROJECT_ENV`,
-> `CUDA_TOOLKIT`, `MODEL_NAME_OR_PATH`, `TRAIN_DATA_JSON`) holding absolute paths from the
-> development machine. Edit these to match your environment before the first run.
-
 ```bash
 CUDA_VISIBLE_DEVICES=0,1 bash scripts/sova-tw-grpo.sh
 ```
 
 The launcher takes no positional arguments — configure a run by editing the selector block at the
-top of the script.
+top of the script. Its paths block (`PROJECT_ROOT`, `PROJECT_ENV`, `CUDA_TOOLKIT`,
+`MODEL_NAME_OR_PATH`, `TRAIN_DATA_JSON`) holds absolute paths from the development machine; edit
+them to match your environment before the first run.
 
 ### Method selector
 
@@ -244,10 +255,6 @@ fails closed on any other combination.
 To reproduce the conference configuration instead, run `bash scripts/tw-grpo.sh`.
 
 ## Evaluation
-
-> [!NOTE]
-> This repository provides evaluation code only. Trained checkpoints, datasets and baseline
-> results must be obtained independently.
 
 ```bash
 bash scripts/eval-sova-tw-grpo.sh    # SOVA-TW-GRPO on video reasoning benchmarks
@@ -314,12 +321,15 @@ If you find this project useful, please consider citing the conference version:
                Zhu, Nannan and Chen, Hongbo and Zheng, Wei-Shi and Wang, Meng and
                Chua, Tat-Seng},
   booktitle = {European Conference on Computer Vision (ECCV)},
-  year      = {2026}
+  publisher = {Springer},
+  year      = {2026},
+  note      = {arXiv:2505.24718}
 }
 ```
 
-The journal extension introducing SOVA is under review; this section will be updated once a
-citable reference is available.
+ECCV 2026 takes place 10-12 September 2026; page numbers and the DOI will be added to this entry
+once the proceedings are published. The journal extension introducing SOVA is under review and
+this section will be updated once it has a citable reference.
 
 ## License
 
