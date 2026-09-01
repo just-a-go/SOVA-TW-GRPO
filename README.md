@@ -178,10 +178,8 @@ Skip this step if you only want to reproduce the CLEVRER results.
 CUDA_VISIBLE_DEVICES=0,1 bash scripts/sova-tw-grpo.sh
 ```
 
-The launcher takes no positional arguments; configure a run by editing the selector block at the
-top of the script. Its paths block (`PROJECT_ROOT`, `PROJECT_ENV`, `CUDA_TOOLKIT`,
-`MODEL_NAME_OR_PATH`, `TRAIN_DATA_JSON`) holds absolute paths from the development machine; edit
-them to match your environment before the first run.
+The launcher takes no arguments; configure a run in the paths and selector blocks at the top of
+the script. The paths there are from the development machine, so edit them first.
 
 ### Method selector
 
