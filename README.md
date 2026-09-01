@@ -227,28 +227,6 @@ bash scripts/evaluate.sh             # Conference-version evaluation entry point
 
 TW-GRPO checkpoints are available at [Falconss1/TW-GRPO](https://huggingface.co/Falconss1/TW-GRPO).
 
-<details>
-<summary><b>Baseline evaluation</b></summary>
-
-```bash
-huggingface-cli download --resume-download Video-R1/Video-R1-7B --local-dir Video-R1/Video-R1-7B
-huggingface-cli download --resume-download Video-R1/Qwen2.5-VL-7B-COT-SFT --local-dir Video-R1/Qwen2.5-VL-7B-COT-SFT
-huggingface-cli download --resume-download OpenGVLab/VideoChat-R1_7B --local-dir OpenGVLab/VideoChat-R1_7B
-```
-
-```bash
-bash scripts/evaluate_video_r1.sh        # Video-R1
-bash scripts/evaluate_qwen2_5vl_sft.sh   # Qwen2.5-VL-7B-COT-SFT
-bash scripts/evaluate_videochat_r1.sh    # VideoChat-R1
-bash scripts/evaluate_qwen2_5vl.sh       # Qwen2.5-VL, zero-shot
-```
-
-For other baselines, change `MODEL_NAME` inside the evaluation script.
-
-NGRPO and AVSPO are run through the training launcher with `LOSS_TYPE="ngrpo"` or `"avspo"`.
-
-</details>
-
 ## Question-Answer Inversion (QAI)
 
 QAI converts single-choice QA into multi-answer QA by negating the question and inverting the
