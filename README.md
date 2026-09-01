@@ -42,13 +42,6 @@ group-relative normalization.
   <img src="docs/figs/motivation.png" alt="Motivation for SOVA-TW-GRPO" width="100%">
 </p>
 
-<p align="center">
-  <sub><b>Motivation for SOVA-TW-GRPO.</b> GRPO weights every token alike, scores answers 0/1, and
-  leaves no learning signal once a sampled group agrees. SOVA-TW-GRPO reweights tokens by
-  information density, rewards partial correctness, and injects a virtual anchor into
-  outcome-homogeneous groups.</sub>
-</p>
-
 Group Relative Policy Optimization scores a whole response by the correctness of its final answer
 and normalizes that score within a sampled group. One scalar is therefore shared by every token of
 a reasoning chain, by every answer that is not exactly correct, and by every response of a group
@@ -80,13 +73,6 @@ controlled by a per-branch coefficient `lambda`.
 
 <p align="center">
   <img src="docs/figs/sova_qualitative.png" alt="SOVA advantage recalibration on an all-zero-accuracy group" width="100%">
-</p>
-
-<p align="center">
-  <sub><b>Advantage recalibration, negative branch.</b> Eight CLEVRER rollouts all fail and share one
-  total reward, so TW-GRPO normalizes to zero advantages. The negative gate admits the anchor
-  <code>v_- = 2.0</code> into the statistics alone, and the interpolated residual pushes every real
-  advantage below zero.</sub>
 </p>
 
 The anchors set only a **direction**, not a magnitude: the induced group-level shift is known in
