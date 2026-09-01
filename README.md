@@ -19,7 +19,7 @@ reasoning that allocates credit at **three complementary granularities**: indivi
 **answer sets**, and whole **response groups**.
 
 It extends **TW-GRPO** (ECCV 2026, *Reinforcing Video Reasoning with Focused Thinking*) with
-**SOVA** — *Strict Outcome-Conditioned Virtual Advantages* — which restores a directional learning
+**SOVA** (*Strict Outcome-Conditioned Virtual Advantages*), which restores a directional learning
 signal in response groups whose outcomes are homogeneous, a failure mode inherited from
 group-relative normalization.
 
@@ -56,8 +56,8 @@ whose outcomes agree. SOVA-TW-GRPO refines credit assignment at each of those th
 ## What SOVA adds
 
 When every response in a sampled group is fully correct and well formatted, or when none earns any
-accuracy credit, the group-relative advantage is zero for every response and no gradient survives
-— precisely at the outcome extremes that carry the clearest correctness evidence. Token weighting
+accuracy credit, the group-relative advantage is zero for every response and no gradient survives,
+precisely at the outcome extremes that carry the clearest correctness evidence. Token weighting
 and soft rewards cannot recover it, because both act on an advantage that has already vanished.
 
 SOVA inserts a **signed virtual anchor** into the group-normalization statistics on those two
@@ -78,7 +78,7 @@ controlled by a per-branch coefficient `lambda`.
 The anchors set only a **direction**, not a magnitude: the induced group-level shift is known in
 closed form, is bounded independently of the anchor value, and preserves the reward ordering among
 sampled responses. Treat `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` and
-`SOVA_NEGATIVE_VIRTUAL_TOTAL_REWARD` as semantic constants rather than strength knobs — use
+`SOVA_NEGATIVE_VIRTUAL_TOTAL_REWARD` as semantic constants rather than strength knobs; use
 `lambda` to control the strength.
 
 ## Paper-to-code map
@@ -97,22 +97,22 @@ sampled responses. Treat `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` and
 
 ```
 SOVA-TW-GRPO/
-├── configs/                      # Training / SFT / DeepSpeed configuration
+├── configs/
 ├── data/
-│   └── question_answer_inverse/  # QAI conversion scripts
-├── example/                      # Case studies and the QAI tutorial
-├── scripts/                      # Launchers for training and evaluation
-│   ├── sova-tw-grpo.sh           # Main launcher (SOVA-TW-GRPO and baselines)
-│   ├── tw-grpo.sh                # Conference-version launcher
-│   ├── eval-sova-tw-grpo.sh      # SOVA-TW-GRPO evaluation
-│   └── eval-sova-general.sh      # General video understanding evaluation
+│   └── question_answer_inverse/
+├── example/
+├── scripts/
+│   ├── sova-tw-grpo.sh
+│   ├── tw-grpo.sh
+│   ├── eval-sova-tw-grpo.sh
+│   └── eval-sova-general.sh
 ├── src/
-│   ├── eval/                     # Benchmark evaluation code
+│   ├── eval/
 │   └── open_r1/
-│       ├── grpo.py               # Reward functions and entry point
-│       ├── grpo_variants.py      # NGRPO / AVSPO baselines
-│       ├── sova.py               # SOVA virtual advantages
-│       └── trainer/              # GRPO trainer and config
+│       ├── grpo.py
+│       ├── grpo_variants.py
+│       ├── sova.py
+│       └── trainer/
 └── tests/
 ```
 
@@ -122,7 +122,7 @@ SOVA-TW-GRPO/
 > The training commands below are configured for one node with 2 x H800 (80 GB).
 > Training for 500 steps takes roughly 4 hours.
 
-### Step 1 — Environment
+### Step 1: Environment
 
 ```bash
 git clone https://github.com/just-a-go/SOVA-TW-GRPO.git
@@ -134,7 +134,7 @@ pip3 install flash_attn --no-build-isolation
 pip3 install "qwen-vl-utils>=0.0.10" decord
 ```
 
-### Step 2 — Model backbone
+### Step 2: Model backbone
 
 ```bash
 pip install -U huggingface_hub
@@ -142,7 +142,7 @@ huggingface-cli download --resume-download Qwen/Qwen2.5-VL-7B-Instruct \
   --local-dir Qwen/Qwen2.5-VL-7B-Instruct
 ```
 
-### Step 3 — Training data (CLEVRER)
+### Step 3: Training data (CLEVRER)
 
 Training uses the counterfactual split of CLEVRER. Annotations and videos are not bundled;
 download them from the official source into your local `data/CLEVRER` directory.
@@ -159,7 +159,7 @@ unzip data/CLEVRER/validation_video/video_validation.zip -d data/CLEVRER/validat
 rm data/CLEVRER/validation_video/video_validation.zip
 ```
 
-### Step 4 — Evaluation data (optional)
+### Step 4: Evaluation data (optional)
 
 Skip this step if you only want to reproduce the CLEVRER results.
 
@@ -176,7 +176,7 @@ Skip this step if you only want to reproduce the CLEVRER results.
 <summary><b>Annotation sources and expected directory structure</b></summary>
 
 - NExT-QA and NExT-GQA share the same video content.
-- MVBench may contain missing videos — see [Video-R1 issue #24](https://github.com/tulerfeng/Video-R1/issues/24).
+- MVBench may contain missing videos; see [Video-R1 issue #24](https://github.com/tulerfeng/Video-R1/issues/24).
 - Annotations are not bundled. Place them under `data/evaluation/` and `data/CLEVRER/`:
   - NExT-GQA files come from [VideoChat-R1](https://github.com/OpenGVLab/VideoChat-R1)
   - MMVU / MVBench / TempCompass / Video-MME test files come from [Video-R1](https://github.com/tulerfeng/Video-R1)
@@ -199,7 +199,7 @@ videoMME/data/video1.mp4 ...
 CUDA_VISIBLE_DEVICES=0,1 bash scripts/sova-tw-grpo.sh
 ```
 
-The launcher takes no positional arguments — configure a run by editing the selector block at the
+The launcher takes no positional arguments; configure a run by editing the selector block at the
 top of the script. Its paths block (`PROJECT_ROOT`, `PROJECT_ENV`, `CUDA_TOOLKIT`,
 `MODEL_NAME_OR_PATH`, `TRAIN_DATA_JSON`) holds absolute paths from the development machine; edit
 them to match your environment before the first run.
@@ -222,8 +222,8 @@ SOVA requires `LOSS_TYPE="tw_grpo"`; the trainer rejects any other combination.
 | `SOVA_MODE` | `positive` / `negative` / `bidirectional` | Which gate(s) are active |
 | `SOVA_LAMBDA_POSITIVE` | `[0, 1]` | Interpolation weight of the positive branch |
 | `SOVA_LAMBDA_NEGATIVE` | `[0, 1]` | Interpolation weight of the negative branch |
-| `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` | `1.5` (default) | Positive anchor — a semantic constant, keep fixed |
-| `SOVA_NEGATIVE_VIRTUAL_TOTAL_REWARD` | `2.0` (default) | Negative anchor — a semantic constant, keep fixed |
+| `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` | `1.5` (default) | Positive anchor (semantic constant, keep fixed) |
+| `SOVA_NEGATIVE_VIRTUAL_TOTAL_REWARD` | `2.0` (default) | Negative anchor (semantic constant, keep fixed) |
 
 A `lambda` must be strictly positive exactly when its branch is enabled; `validate_sova_configuration()`
 fails closed on any other combination.
