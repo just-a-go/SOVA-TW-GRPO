@@ -224,6 +224,9 @@ bash scripts/evaluate.sh             # Conference-version evaluation entry point
 
 TW-GRPO checkpoints are available at [Falconss1/TW-GRPO](https://huggingface.co/Falconss1/TW-GRPO).
 
+Case studies comparing reasoning paths against [Video-R1](https://github.com/tulerfeng/Video-R1)
+are collected in [`example/performance_comparison.md`](example/performance_comparison.md).
+
 ## Question-Answer Inversion (QAI)
 
 QAI converts single-choice QA into multi-answer QA by negating the question and inverting the
@@ -237,9 +240,6 @@ python data/question_answer_inverse/convert_star.py      # STAR
 
 Outputs are written to your local `data/evaluation/` directory as `nextgqa_val_mixed.json` and
 `STAR_mixed.json`.
-
-Case studies comparing reasoning paths against [Video-R1](https://github.com/tulerfeng/Video-R1)
-are collected in [`example/performance_comparison.md`](example/performance_comparison.md).
 
 ## Acknowledgements
 

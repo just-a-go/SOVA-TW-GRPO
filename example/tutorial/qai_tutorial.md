@@ -1,6 +1,6 @@
-## Question-Answer Inverse (QAI)
+# Question-Answer Inversion (QAI)
 
-QAI is a data augmentation technique that converts single-choice QA into multi-choice QA through question-answer inverse. Here's how it works:
+QAI is a data augmentation technique that converts single-choice QA into multi-answer QA by question-answer inversion. Here's how it works:
 
 ### Basic Conversion Example
 **Original Question from STAR:**  
@@ -29,10 +29,10 @@ C. Put down
 ### Implementation
 Scripts for QAI conversion are available in:
 ```bash
-python question_answer_inverse/convert_nextgqa.py  # For NExT-GQA inversion
-python question_answer_inverse/convert_star.py     # For STAR inversion
+python data/question_answer_inverse/convert_nextgqa.py  # For NExT-GQA inversion
+python data/question_answer_inverse/convert_star.py     # For STAR inversion
 ```
 
-Output files will be generated in the `evaluation/` directory:
+Output files will be generated in the `data/evaluation/` directory:
 - NExT-GQA: `nextgqa_val_mixed.json`
 - STAR: `STAR_mixed.json`
