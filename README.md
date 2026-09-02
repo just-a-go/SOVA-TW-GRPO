@@ -83,15 +83,16 @@ sampled responses. Treat `SOVA_POSITIVE_VIRTUAL_TOTAL_REWARD` and
 
 ## Paper-to-code map
 
-| Paper | Component | Code |
-| :-- | :-- | :-- |
-| Sec. III-B | Token importance weight `w_t` from intra-group KL divergence | [`src/open_r1/trainer/grpo_trainer.py`](src/open_r1/trainer/grpo_trainer.py) → `compute_token_importance_kl_logs_uniform()`; applied to the per-token loss. Flag: `--alpha` |
-| Sec. III-C, Eq. (7) | Multi-level soft accuracy reward | [`src/open_r1/grpo.py`](src/open_r1/grpo.py) → `accuracy_reward()` (soft) vs. `origin_accuracy_reward()` (binary), `format_reward()`. Flags: `--reward_funcs`, `--question_type` |
-| Sec. III-C | Question-Answer Inversion (QAI) | [`data/question_answer_inverse/`](data/question_answer_inverse/) → `convert_nextgqa.py`, `convert_star.py` |
-| Sec. III-D, Eq. (10) | Strict outcome conditions (the two gates) | [`src/open_r1/sova.py`](src/open_r1/sova.py) → `apply_sova_advantages()` |
-| Sec. III-D, Eq. (17) | Residual interpolation between baseline and virtual-statistics advantage | [`src/open_r1/sova.py`](src/open_r1/sova.py) → `apply_sova_advantages()`, `_virtual_group_statistics()` |
-| Sec. IV | Configuration validity conditions used by the analysis | [`src/open_r1/sova.py`](src/open_r1/sova.py) → `validate_sova_configuration()` |
-| Sec. II-C, Table I | NGRPO and AVSPO baselines for degenerate advantage groups | [`src/open_r1/grpo_variants.py`](src/open_r1/grpo_variants.py) → `compute_ngrpo_advantages()`, AVSPO transforms. Flag: `--loss_type ngrpo` / `avspo` |
+Code paths are relative to `src/open_r1/` unless shown otherwise.
+
+| Paper | Component | Code | Flag |
+| :-- | :-- | :-- | :-- |
+| Sec. III-B | Token importance weight `w_t` from intra-group KL divergence | [`trainer/grpo_trainer.py`](src/open_r1/trainer/grpo_trainer.py) → `compute_token_importance_kl_logs_uniform()` | `--alpha` |
+| Sec. III-C, Eq. (7) | Multi-level soft accuracy reward | [`grpo.py`](src/open_r1/grpo.py) → `accuracy_reward()`, `origin_accuracy_reward()`, `format_reward()` | `--reward_funcs`, `--question_type` |
+| Sec. III-C | Question-Answer Inversion (QAI) | [`data/question_answer_inverse/`](data/question_answer_inverse/) | |
+| Sec. III-D, Eq. (10), (17) | Strict outcome gates and residual interpolation | [`sova.py`](src/open_r1/sova.py) → `apply_sova_advantages()`, `_virtual_group_statistics()` | |
+| Sec. IV | Configuration validity conditions | [`sova.py`](src/open_r1/sova.py) → `validate_sova_configuration()` | |
+| Sec. II-C, Table I | NGRPO and AVSPO baselines for degenerate advantage groups | [`grpo_variants.py`](src/open_r1/grpo_variants.py) → `compute_ngrpo_advantages()` | `--loss_type` |
 
 ## Repository layout
 
