@@ -295,9 +295,6 @@ the advantage estimator; the paper reports the full comparison against external 
   </tbody>
 </table>
 
-CLEVRER is the counterfactual split under strict accuracy, MMVU the multiple-choice split, and
-Video-MME is evaluated without subtitles.
-
 Reproduce these numbers with the evaluation entry points below.
 
 ```bash
