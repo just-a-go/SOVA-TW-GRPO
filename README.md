@@ -298,6 +298,8 @@ the advantage estimator; the paper reports the full comparison against external 
 CLEVRER is the counterfactual split under strict accuracy, MMVU the multiple-choice split, and
 Video-MME is evaluated without subtitles.
 
+Reproduce these numbers with the evaluation entry points below.
+
 ```bash
 bash scripts/eval-sova-tw-grpo.sh    # SOVA-TW-GRPO on video reasoning benchmarks
 bash scripts/eval-sova-general.sh    # General video understanding benchmarks
