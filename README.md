@@ -307,8 +307,6 @@ bash scripts/eval-sova-general.sh    # General video understanding benchmarks
 bash scripts/evaluate.sh             # Conference-version evaluation entry point
 ```
 
-TW-GRPO checkpoints are available at [Falconss1/TW-GRPO](https://huggingface.co/Falconss1/TW-GRPO).
-
 Case studies comparing reasoning paths against [Video-R1](https://github.com/tulerfeng/Video-R1)
 are collected in [`example/performance_comparison.md`](example/performance_comparison.md).
 
