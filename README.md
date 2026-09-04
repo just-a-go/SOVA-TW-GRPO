@@ -154,14 +154,14 @@ rm data/CLEVRER/validation_video/video_validation.zip
 
 Skip this step if you only want to reproduce the CLEVRER results.
 
-| Dataset | Size | Link |
-| :-- | --: | :-- |
-| NExT-QA | 11 GB | [huggingface.co/datasets/lmms-lab/NExTQA](https://huggingface.co/datasets/lmms-lab/NExTQA) |
-| MMVU | 0.9 GB | [huggingface.co/datasets/yale-nlp/MMVU](https://huggingface.co/datasets/yale-nlp/MMVU) |
-| MVBench | 16 GB | [huggingface.co/datasets/OpenGVLab/MVBench](https://huggingface.co/datasets/OpenGVLab/MVBench) |
-| TempCompass | 0.4 GB | [huggingface.co/datasets/lmms-lab/TempCompass](https://huggingface.co/datasets/lmms-lab/TempCompass) |
-| Video-MME | 94 GB | [huggingface.co/datasets/lmms-lab/Video-MME](https://huggingface.co/datasets/lmms-lab/Video-MME) |
-| STAR | 7 GB | [modelscope.cn/datasets/Video-R1/Video-R1-data](https://modelscope.cn/datasets/Video-R1/Video-R1-data/files) |
+| Dataset | Link |
+| :-- | :-- |
+| NExT-QA | [huggingface.co/datasets/lmms-lab/NExTQA](https://huggingface.co/datasets/lmms-lab/NExTQA) |
+| MMVU | [huggingface.co/datasets/yale-nlp/MMVU](https://huggingface.co/datasets/yale-nlp/MMVU) |
+| MVBench | [huggingface.co/datasets/OpenGVLab/MVBench](https://huggingface.co/datasets/OpenGVLab/MVBench) |
+| TempCompass | [huggingface.co/datasets/lmms-lab/TempCompass](https://huggingface.co/datasets/lmms-lab/TempCompass) |
+| Video-MME | [huggingface.co/datasets/lmms-lab/Video-MME](https://huggingface.co/datasets/lmms-lab/Video-MME) |
+| STAR | [modelscope.cn/datasets/Video-R1/Video-R1-data](https://modelscope.cn/datasets/Video-R1/Video-R1-data/files) |
 
 ## Training
 
