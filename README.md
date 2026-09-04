@@ -4,12 +4,6 @@
 
 **Reinforcing Video Reasoning with Focused Thinking via Three Granularities:<br/>Tokens, Answer Sets, and Response Groups**
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.10-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-bf16-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![Backbone](https://img.shields.io/badge/Backbone-Qwen2.5--VL--7B-6E56CF.svg)](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct)
-[![arXiv](https://img.shields.io/badge/arXiv-2505.24718-B31B1B.svg)](https://arxiv.org/abs/2505.24718)
-
 </div>
 
 ---
@@ -250,7 +244,7 @@ This work builds on the open-source community, in particular
 
 ## Citation
 
-If you find this project useful, please consider citing the conference version:
+If you find this project useful, please consider citing the conference version, [arXiv:2505.24718](https://arxiv.org/abs/2505.24718):
 
 ```bibtex
 @inproceedings{dang2026reinforcing,
