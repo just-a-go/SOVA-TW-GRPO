@@ -210,6 +210,94 @@ To reproduce the conference configuration instead, run `bash scripts/tw-grpo.sh`
 
 ## Evaluation
 
+Accuracy (%) on video reasoning and general video understanding benchmarks. Every
+reinforcement-learning row shares the same 1000-sample CLEVRER training budget and differs only in
+the advantage estimator; the paper reports the full comparison against external baselines.
+
+<table>
+  <thead>
+    <tr>
+      <th rowspan="2" align="left">Model</th>
+      <th rowspan="2" align="center">Training</th>
+      <th colspan="3" align="center">Video Reasoning</th>
+      <th colspan="3" align="center">General Video Understanding</th>
+    </tr>
+    <tr>
+      <th align="center">CLEVRER</th>
+      <th align="center">NExT-GQA</th>
+      <th align="center">MMVU</th>
+      <th align="center">MVBench</th>
+      <th align="center">TempCompass</th>
+      <th align="center">Video-MME</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">Qwen2.5-VL-7B (zero-shot)</td>
+      <td align="center">&ndash;</td>
+      <td align="center">30.5</td>
+      <td align="center">75.9</td>
+      <td align="center">65.4</td>
+      <td align="center">63.3</td>
+      <td align="center">72.5</td>
+      <td align="center">56.5</td>
+    </tr>
+    <tr>
+      <td align="left">GRPO</td>
+      <td align="center">1000 RL</td>
+      <td align="center">41.1</td>
+      <td align="center">75.2</td>
+      <td align="center">65.1</td>
+      <td align="center">62.8</td>
+      <td align="center">71.9</td>
+      <td align="center">55.9</td>
+    </tr>
+    <tr>
+      <td align="left">NGRPO</td>
+      <td align="center">1000 RL</td>
+      <td align="center">42.3</td>
+      <td align="center">75.0</td>
+      <td align="center">64.9</td>
+      <td align="center">62.9</td>
+      <td align="center">71.8</td>
+      <td align="center">55.6</td>
+    </tr>
+    <tr>
+      <td align="left">AVSPO</td>
+      <td align="center">1000 RL</td>
+      <td align="center">43.2</td>
+      <td align="center">75.4</td>
+      <td align="center">65.2</td>
+      <td align="center">63.1</td>
+      <td align="center">72.1</td>
+      <td align="center">55.9</td>
+    </tr>
+    <tr>
+      <td align="left">TW-GRPO</td>
+      <td align="center">1000 RL</td>
+      <td align="center">50.4</td>
+      <td align="center">76.1</td>
+      <td align="center">65.8</td>
+      <td align="center">63.3</td>
+      <td align="center"><b>73.3</b></td>
+      <td align="center">55.1</td>
+    </tr>
+    <tr>
+      <td align="left"><b>SOVA-TW-GRPO</b></td>
+      <td align="center">1000 RL</td>
+      <td align="center"><b>51.9</b></td>
+      <td align="center"><b>76.7</b></td>
+      <td align="center"><b>65.9</b></td>
+      <td align="center"><b>64.4</b></td>
+      <td align="center"><b>73.3</b></td>
+      <td align="center"><b>56.9</b></td>
+    </tr>
+  </tbody>
+</table>
+
+CLEVRER is the counterfactual split under strict accuracy, MMVU the multiple-choice split, and
+Video-MME is evaluated without subtitles.
+
 ```bash
 bash scripts/eval-sova-tw-grpo.sh    # SOVA-TW-GRPO on video reasoning benchmarks
 bash scripts/eval-sova-general.sh    # General video understanding benchmarks
