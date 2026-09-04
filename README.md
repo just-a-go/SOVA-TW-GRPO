@@ -49,31 +49,9 @@ whose outcomes agree. SOVA-TW-GRPO refines credit assignment at each of those th
 
 ## What SOVA adds
 
-The path a sampled group takes through the advantage computation:
-
-```mermaid
-flowchart TD
-    A["Sampled group of G responses<br/>reward r_i = accuracy + format"]
-    B["Group statistics<br/>mean and std over the G rewards"]
-    C["TW-GRPO advantage<br/>A_i = (r_i - mean) / std"]
-    D{"Is the group outcome<br/>homogeneous?"}
-    P["Positive branch<br/>virtual anchor 1.5"]
-    N["Negative branch<br/>virtual anchor 2.0"]
-    K["No gate fires"]
-    S["Recompute mean and std over the G rewards<br/>plus the anchor, which adds no response tokens"]
-    V["Virtual-statistics advantage<br/>Av_i = (r_i - mean') / std'"]
-    R["Residual interpolation<br/>A_i + lambda * (Av_i - A_i)"]
-    O["Final advantage"]
-
-    A --> B --> C --> D
-    D -->|"every accuracy = 1 and every format = 1"| P
-    D -->|"every accuracy = 0"| N
-    D -->|"otherwise"| K
-    P --> S
-    N --> S
-    S --> V --> R --> O
-    K -->|"advantage unchanged"| O
-```
+<p align="center">
+  <img src="docs/figs/overview.png" alt="Overview of the SOVA-TW-GRPO framework" width="100%">
+</p>
 
 When every response in a sampled group is fully correct and well formatted, or when none earns any
 accuracy credit, the group-relative advantage is zero for every response and no gradient survives,
