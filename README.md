@@ -2,7 +2,7 @@
 
 # SOVA-TW-GRPO
 
-**Reinforcing Video Reasoning with Focused Thinking via Three Granularities:<br/>Tokens, Answer Sets, and Response Groups**
+### Reinforcing Video Reasoning with Focused Thinking via Three Granularities:<br/>Tokens, Answer Sets, and Response Groups
 
 </div>
 
