@@ -101,8 +101,7 @@ SOVA-TW-GRPO/
 │   └── question_answer_inverse/
 ├── docs/
 │   └── figs/
-├── example/
-│   └── tutorial/
+├── outputs/
 ├── scripts/
 ├── src/
 │   ├── eval/
@@ -307,14 +306,11 @@ bash scripts/eval-sova-general.sh    # General video understanding benchmarks
 bash scripts/evaluate.sh             # Conference-version evaluation entry point
 ```
 
-Case studies comparing reasoning paths against [Video-R1](https://github.com/tulerfeng/Video-R1)
-are collected in [`example/performance_comparison.md`](example/performance_comparison.md).
-
 ## Question-Answer Inversion (QAI)
 
 QAI converts single-choice QA into multi-answer QA by negating the question and inverting the
 answer set, which supplies the multi-level reward with training data. A worked example is given in
-[`example/tutorial/qai_tutorial.md`](example/tutorial/qai_tutorial.md).
+[`qai_tutorial.md`](qai_tutorial.md).
 
 ```bash
 python data/question_answer_inverse/convert_nextgqa.py   # NExT-GQA
